@@ -12,40 +12,31 @@ def get_abs_path(rel_path):
 
 
 def show_image(img):
-    cv2.imshow('Image', image)
+    cv2.imshow('Image', img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
-def to_grayscale_pixel(pixel):
-    r = pixel[0]
-    g = pixel[1]
-    b = pixel[2]
-    return (r + g + b) / 3
-
-
 def to_grayscale_image_average(img): 
-    for x in range(img.shape[0]):
-        for y in range(img.shape[1]):
-            gray_pixel = to_grayscale_pixel(img[x][y])
-            img[x][y] = gray_pixel
-    return img
+    average_values = np.mean(img, axis=2, keepdims=True)
+    return np.tile(average_values, (1, 1, 3)).astype(np.uint8)
 
+def to_grayscale_image(img, r_factor = 0.3, g_factor = 0.59, b_factor = 0.11): 
+    height, width, n_channels = img.shape
+    r_matr = np.full((height, width), r_factor)
+    g_matr = np.full((height, width), g_factor)  
+    b_matr = np.full((height, width), b_factor)
 
-def to_grayscale_image(img, r_factor, g_factor, b_factor): 
-    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #return cv2.multiply(img, (r_factor, g_factor, b_factor, 0))
+    sum = np.array(img[:, :, 0] * r_matr + img[:, :, 1] * g_matr + img[:, :, 2] * b_matr).reshape((height, width, 1))
+    return np.tile(sum, (1, 1, n_channels)).astype(np.uint8)
+    
 
-
-def get_img_diff(img_1, img_2):
-    return img_1
-
-def play_video(video_path):
+def play_video(video_path, frame_modifier_cb):
     cap = cv2.VideoCapture(video_path)
 
     while(cap.isOpened()):
         ret, frame = cap.read()
-        cv2.imshow('frame', to_grayscale_image(frame, r_factor = 0.3, g_factor = 0.59, b_factor = 0.11))
+        cv2.imshow('frame', frame_modifier_cb(frame))
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -58,9 +49,12 @@ def load_image(image_path):
 
 if __name__ == "__main__":
     image = load_image(get_abs_path(IMAGE_REL_PATH))
+
+    image_1 = to_grayscale_image_average(image)
+    image_2 = to_grayscale_image(image)
+    show_image(image_1 - image_2)
+    #show_image(image_2)
+    #show_image(image_1 - image_2)
     
-    image = to_grayscale_image(image, r_factor = 0.3, g_factor = 0.59, b_factor = 0.11)
-    
-    
-    play_video(get_abs_path(VIDEO_REL_PATH))
+    #play_video(get_abs_path(VIDEO_REL_PATH), to_grayscale_image)
 
