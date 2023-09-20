@@ -33,10 +33,13 @@ def to_grayscale_image(img, r_factor = 0.3, g_factor = 0.59, b_factor = 0.11):
 
 def play_video(video_path, frame_modifier_cb):
     cap = cv2.VideoCapture(video_path)
-
+    last_frame = np.array([])
     while(cap.isOpened()):
         ret, frame = cap.read()
-        cv2.imshow('frame', frame_modifier_cb(frame))
+        if last_frame.size != 0:
+            cv2.imshow('frame', frame_modifier_cb(frame - last_frame))
+
+        last_frame = frame
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -50,11 +53,17 @@ def load_image(image_path):
 if __name__ == "__main__":
     image = load_image(get_abs_path(IMAGE_REL_PATH))
 
+    # Gray=(R + G + B)/3
     image_1 = to_grayscale_image_average(image)
+    show_image(image_1)
+
+    # Gray=0.3*R+0.59*G+0.11*B
     image_2 = to_grayscale_image(image)
-    show_image(image_1 - image_2)
-    #show_image(image_2)
-    #show_image(image_1 - image_2)
+    show_image(image_2)
     
-    #play_video(get_abs_path(VIDEO_REL_PATH), to_grayscale_image)
+    # Images' difference
+    show_image(image_1 - image_2)
+
+    # Create a primitive movement detector
+    play_video(get_abs_path(VIDEO_REL_PATH), to_grayscale_image)
 
